@@ -136,6 +136,7 @@ class AppApiController extends BaseController
         $tempArray = [];
         foreach ($nodes as $node) {
             if ($node->isNodeOnline()) {
+                $node->name = preg_replace('/-/', ' - ', $node->name);
                 $v2server = URL::getV2Url($user, $node, 1);
                 array_push($tempArray, array_merge($v2server, [
                     "name" => $node->name,
