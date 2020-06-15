@@ -108,6 +108,8 @@ class AppApiController extends BaseController
         $token = $this->getToken($accessToken);
         if (!$token) return $response->withStatus(401)->withJson(['ret' => 0]);
         $user = User::find($token->user_id);
+        // 等级过期时间
+//        $user->expire_time = $user->class_expire;
         $Ann = Ann::orderBy('date', 'desc')->first();
         return $this->echoJson($response, [
                 'code' => 1,
@@ -127,7 +129,7 @@ class AppApiController extends BaseController
 
     public static function v2_nodes($user)
     {
-        $nodes = Node::whereIn('sort', [13])->where("type", "1")->where(
+        $nodes = Node::whereIn('sort', [11, 12])->where("type", "1")->where(
             function ($query) use ($user) {
                 $query->where("node_group", "=", $user->node_group)
                     ->orWhere("node_group", "=", 0);
@@ -147,7 +149,10 @@ class AppApiController extends BaseController
                     "online_user" => $node->getOnlineUserCount(),
                     "node_class" => $node->node_class,
                     "traffic_rate" => $node->traffic_rate,
-                    "server_port" => $v2server['add'],
+                    "server_port" => $v2server['port'],
+                    "obfsparam" => "",
+                    "obfs" => "",
+                    "protocol_param" => "",
                     "group" => Config::get('appName'),
                 ]));
             }
@@ -161,6 +166,8 @@ class AppApiController extends BaseController
         $token = $this->getToken($accessToken);
         if (!$token) return $response->withStatus(401)->withJson(['ret' => 0]);
         $user = User::find($token->user_id);
+        // 等级过期时间
+//        $user->expire_time = $user->class_expire;
         $Ann = Ann::orderBy('date', 'desc')->first();
         return $this->echoJson($response, [
                 'code' => 1,
@@ -274,13 +281,13 @@ class AppApiController extends BaseController
                             "server_port" => $port,
                             "method" => $mu_user->method,
                             "group" => Config::get('appName'),
-                            "obfs" => str_replace("_compatible", "", (($node->custom_rss == 1 && !($mu_user->obfs == 'plain' && $mu_user->protocol == 'origin')) ? $mu_user->obfs : "plain")),
-                            "obfsparam" => (($node->custom_rss == 1 && !($mu_user->obfs == 'plain' && $mu_user->protocol == 'origin')) ? $mu_user->obfs_param : ""),
+                            "obfs" => str_replace("_compatible", "", $mu_user->obfs),
+                            "obfsparam" => $mu_user->obfs_param,
                             "remarks_base64" => base64_encode($node->name . "- " . $mu_node->server . " 单端口"),
                             "password" => $mu_user->passwd,
                             "tcp_over_udp" => false,
                             "udp_over_tcp" => false,
-                            "protocol" => str_replace("_compatible", "", (($node->custom_rss == 1 && !($mu_user->obfs == 'plain' && $mu_user->protocol == 'origin')) ? $mu_user->protocol : "origin")),
+                            "protocol" => str_replace("_compatible", "", $mu_user->protocol),
                             "obfs_udp" => false,
                             "enable" => true));
                     }
