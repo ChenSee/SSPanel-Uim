@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Utils\Telegram\Commands;
 
 use App\Models\User;
@@ -11,7 +13,7 @@ use Telegram\Bot\Commands\Command;
 /**
  * Class StratCommand.
  */
-class StartCommand extends Command
+final class StartCommand extends Command
 {
     /**
      * @var string Command Name
@@ -26,7 +28,7 @@ class StartCommand extends Command
     /**
      * {@inheritdoc}
      */
-    public function handle($arguments)
+    public function handle()
     {
         $Update = $this->getUpdate();
         $Message = $Update->getMessage();
@@ -42,16 +44,16 @@ class StartCommand extends Command
 
             // 触发用户
             $SendUser = [
-                'id'       => $Message->getFrom()->getId(),
-                'name'     => $Message->getFrom()->getFirstName() . ' ' . $Message->getFrom()->getLastName(),
+                'id' => $Message->getFrom()->getId(),
+                'name' => $Message->getFrom()->getFirstName() . ' ' . $Message->getFrom()->getLastName(),
                 'username' => $Message->getFrom()->getUsername(),
             ];
             // 消息内容
-            $MessageText = trim($arguments);
+            $MessageText = implode(' ', array_splice(explode(' ', trim($Message->getText())), 1));
             if (
-                $MessageText != ''
-                && TelegramTools::getUser($SendUser['id']) == null
-                && strlen($MessageText) == 16
+                $MessageText !== ''
+                && TelegramTools::getUser($SendUser['id']) === null
+                && strlen($MessageText) === 16
             ) {
                 // 新用户绑定
                 return $this->bindingAccount($SendUser, $MessageText);
@@ -59,51 +61,36 @@ class StartCommand extends Command
             // 回送信息
             $this->replyWithMessage(
                 [
-                    'text'       => '发送 /help 获取帮助',
+                    'text' => '发送 /help 获取帮助',
                     'parse_mode' => 'Markdown',
                 ]
             );
         } else {
-            // 群组
-
-            if ($_ENV['enable_delete_user_cmd'] === true) {
-                TelegramTools::DeleteMessage([
-                    'chatid'      => $ChatID,
-                    'messageid'   => $Message->getMessageId(),
-                ]);
-            }
-
             if ($_ENV['telegram_group_quiet'] === true) {
                 // 群组中不回应
                 return;
             }
-
             // 发送 '输入中' 会话状态
             $this->replyWithChatAction(['action' => Actions::TYPING]);
             // 回送信息
-            $response = $this->replyWithMessage(
+            $this->replyWithMessage(
                 [
                     'text' => '喵喵喵.',
                 ]
             );
-            // 消息删除任务
-            TelegramTools::DeleteMessage([
-                'chatid'      => $ChatID,
-                'messageid'   => $response->getMessageId(),
-            ]);
         }
     }
 
-    public function bindingAccount($SendUser, $MessageText)
+    public function bindingAccount($SendUser, $MessageText): void
     {
-        $Uid = TelegramSessionManager::verify_bind_session($MessageText);
-        if ($Uid == 0) {
+        $Uid = TelegramSessionManager::verifyBindSession($MessageText);
+        if ($Uid === 0) {
             $text = '绑定失败了呢，经检查发现：【' . $MessageText . '】的有效期为 10 分钟，您可以在我们网站上的 **资料编辑** 页面刷新后重试.';
         } else {
-            $BinsUser              = User::where('id', $Uid)->first();
+            $BinsUser = User::where('id', $Uid)->first();
             $BinsUser->telegram_id = $SendUser['id'];
-            $BinsUser->im_type     = 4;
-            $BinsUser->im_value    = $SendUser['username'];
+            $BinsUser->im_type = 4;
+            $BinsUser->im_value = $SendUser['username'];
             $BinsUser->save();
             if ($BinsUser->is_admin >= 1) {
                 $text = '尊敬的**管理员**您好，恭喜绑定成功。' . PHP_EOL . '当前绑定邮箱为：' . $BinsUser->email;
@@ -118,7 +105,7 @@ class StartCommand extends Command
         // 回送信息
         $this->replyWithMessage(
             [
-                'text'       => $text,
+                'text' => $text,
                 'parse_mode' => 'Markdown',
             ]
         );

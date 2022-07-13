@@ -1,16 +1,14 @@
 {include file='user/main.tpl'}
 
-
 <main class="content">
     <div class="content-header ui-content-header">
         <div class="container">
-            <h1 class="content-heading">商品列表</h1>
+            <h1 class="content-heading">套餐购买</h1>
         </div>
     </div>
     <div class="container">
         <div class="col-lg-12 col-sm-12">
             <section class="content-inner margin-top-no">
-
                 <div class="card">
                     <div class="card-main">
                         <div class="card-inner">
@@ -20,7 +18,6 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="ui-switch">
                     <div class="card">
                         <div class="card-main">
@@ -52,23 +49,21 @@
                         </div>
                     </div>
                 </div>
-
             <div data-areatype="orders">
                 <div class="shop-flex">
-
                     {foreach $shops as $shop}
-                    {if $shop->traffic_package() == 0}
+                    {if $shop->trafficPackage() == 0}
                         <div class="card">
                             <div class="card-main">
                                 <div class="shop-name">{$shop->name}</div>
                                 <div class="shop-price">{$shop->price}</div>
                                 <div class="shop-tat">
-                                    <span>{$shop->bandwidth()}</span> / <span>{$shop->class_expire()}</span>
+                                    <span>{$shop->bandwidth()}</span> / <span>{$shop->classExpire()}</span>
                                 </div>
                                 <div class="shop-cube">
                                     <div>
                                         <div class="cube-detail">
-                                            <span>Lv.</span>{$shop->user_class()}
+                                            <span>Lv.</span>{$shop->userClass()}
                                         </div>
                                         <div class="cube-title">
                                             VIP
@@ -94,24 +89,23 @@
                                             端口速率
                                         </div>
                                     </div>
-
                                 </div>
                                 <div class="shop-content">
                                     <div class="shop-content-left">账号有效期:</div>
                                     <div class="shop-content-right">{$shop->expire()}<span>天</span></div>
                                     <div class="shop-content-left">重置周期:</div>
-                                    <div class="shop-content-right">{if {$shop->reset()} == '0' }N / A{else}{$shop->reset_exp()}
+                                    <div class="shop-content-right">{if {$shop->reset()} == '0' }N / A{else}{$shop->resetExp()}
                                             <span>天</span>
                                         {/if}</div>
                                     <div class="shop-content-left">重置频率:</div>
-                                    <div class="shop-content-right">{if {$shop->reset()} == '0' }N / A{else}{$shop->reset_value()}
+                                    <div class="shop-content-right">{if {$shop->reset()} == '0' }N / A{else}{$shop->resetValue()}
                                             <span>G</span>
                                             / {$shop->reset()}
                                             <span>天</span>
                                         {/if}</div>
                                 </div>
                                 <div class="shop-content-extra">
-                                    {foreach $shop->content_extra() as $service}
+                                    {foreach $shop->contentExtra() as $service}
                                         <div><span class="icon">{$service[0]}</span> {$service[1]}</div>
                                     {/foreach}
                                 </div>
@@ -121,23 +115,20 @@
                         </div>
                     {/if}
                     {/foreach}
-
                     <div class="flex-fix3"></div>
                     <div class="flex-fix4"></div>
                 </div>
-
                 <div class="shop-table">
-
                     {foreach $shops as $shop}
-                    {if $shop->traffic_package() == 0}
+                    {if $shop->trafficPackage() == 0}
                         <div class="shop-gridarea">
                             <div class="card">
                                 <div>
                                     <div class="shop-name"><span>{$shop->name}</span></div>
-                                    <div class="card-tag tag-gold">VIP {$shop->user_class()}</div>
+                                    <div class="card-tag tag-gold">VIP {$shop->userClass()}</div>
                                     <div class="card-tag tag-orange">¥ {$shop->price}</div>
                                     <div class="card-tag tag-cyan">{$shop->bandwidth()} G</div>
-                                    <div class="card-tag tag-blue">{$shop->class_expire()} 天</div>
+                                    <div class="card-tag tag-blue">{$shop->classExpire()} 天</div>
                                 </div>
                                 <div>
                                     <i class="material-icons">expand_more</i>
@@ -145,7 +136,6 @@
                             </div>
                             <a class="btn btn-brand-accent shop-btn" href="javascript:void(0);"
                                onClick="buy('{$shop->id}',{$shop->auto_renew})">购买</a>
-
                             <div class="shop-drop dropdown-area">
                                 <div class="card-tag tag-black">账号有效期</div>
                                 <div class="card-tag tag-blue">{$shop->expire()} 天</div>
@@ -154,9 +144,9 @@
                                     <div class="card-tag tag-blue">N/A</div>
                                 {else}
                                     <div class="card-tag tag-black">重置周期</div>
-                                    <div class="card-tag tag-blue">{$shop->reset_exp()} 天</div>
+                                    <div class="card-tag tag-blue">{$shop->resetExp()} 天</div>
                                     <div class="card-tag tag-black">重置频率</div>
-                                    <div class="card-tag tag-blue">{$shop->reset_value()}G/{$shop->reset()}天</div>
+                                    <div class="card-tag tag-blue">{$shop->resetValue()}G/{$shop->reset()}天</div>
                                 {/if}
                                 {if {$shop->speedlimit()} == '0' }
                                     <div class="card-tag tag-black">端口速率</div>
@@ -176,14 +166,12 @@
                         </div>
                     {/if}
                     {/foreach}
-
                 </div>
             </div>
-
             <div style="display: none;" data-areatype="trafficePackages">
                 <div class="shop-table" style="display: flex">
                     {foreach $shops as $shop}
-                    {if $shop->traffic_package() != 0}
+                    {if $shop->trafficPackage() != 0}
                     <div class="shop-gridarea">
                         <div class="card">
                             <div>
@@ -197,7 +185,6 @@
                         </div>
                         <a class="btn btn-brand-accent shop-btn" href="javascript:void(0);"
                         onClick="buyTraffic('{$shop->id}')">购买</a>
-
                         <div class="shop-drop dropdown-area">
                             <div class="card-tag tag-black">流量包流量</div>
                             <div class="card-tag tag-blue">{$shop->bandwidth()} G</div>
@@ -207,7 +194,6 @@
                 {/foreach}
                 </div>
             </div>
-
                 <div aria-hidden="true" class="modal modal-va-middle fade" id="coupon_modal" role="dialog"
                      tabindex="-1">
                     <div class="modal-dialog modal-xs">
@@ -232,7 +218,6 @@
                         </div>
                     </div>
                 </div>
-
                 <div aria-hidden="true" class="modal modal-va-middle fade" id="traffic_package_modal" role="dialog"
                      tabindex="-1">
                     <div class="modal-dialog modal-xs">
@@ -251,7 +236,6 @@
                         </div>
                     </div>
                 </div>
-
                 <div aria-hidden="true" class="modal modal-va-middle fade" id="order_modal" role="dialog" tabindex="-1">
                     <div class="modal-dialog modal-xs">
                         <div class="modal-content">
@@ -263,7 +247,6 @@
                                 <p id="name">商品名称：</p>
                                 <p id="credit">优惠额度：</p>
                                 <p id="total">总金额：</p>
-
                                 <div class="checkbox switch">
                                     <label for="disableothers">
                                         <input checked class="access-hide" id="disableothers" type="checkbox">
@@ -279,7 +262,6 @@
                                 </div>
 
                             </div>
-
                             <div class="modal-footer">
                                 <p class="text-right">
                                     <button class="btn btn-flat btn-brand waves-attach" data-dismiss="modal"
@@ -290,18 +272,12 @@
                         </div>
                     </div>
                 </div>
-
                 {include file='dialog.tpl'}
-
         </div>
-
-
     </div>
 </main>
 
-
 {include file='user/footer.tpl'}
-
 
 <script>
     function buy(id, auto) {
@@ -313,13 +289,11 @@
         shop = id;
         $("#coupon_modal").modal();
     }
-
     let trafficPackageId;
     function buyTraffic(id) {
         trafficPackageId = id
         $("#traffic_package_modal").modal();
     }
-
     $('#traffic_package_confirm').click(function() {
         $.ajax({
             type: "POST",
@@ -346,49 +320,35 @@
             }
         })
     })
-
     ;(function () {
-
         //UI切换
         let elShopCard = $$.querySelectorAll(".shop-flex");
         let elShopTable = $$.querySelectorAll("[data-areatype=orders] .shop-table");
-
         let switchToCard = new UIswitch('switch-cards', elShopTable, elShopCard, 'flex', 'tempshop');
         switchToCard.listenSwitch();
-
         let switchToTable = new UIswitch('switch-table', elShopCard, elShopTable, 'flex', 'tempshop');
         switchToTable.listenSwitch();
-
         switchToCard.setDefault();
         switchToTable.setDefault();
-
         //手风琴
         let dropDownButton = $$.querySelectorAll('.shop-table .card');
         let dropDownArea = $$.querySelectorAll('.dropdown-area');
         let arrows = $$.querySelectorAll('.shop-table .card i');
-
         for (let i = 0; i < dropDownButton.length; i++) {
             rotatrArrow(dropDownButton[i], arrows[i]);
             custDropdown(dropDownButton[i], dropDownArea[i]);
         }
-
         //商品类型
         let orderType = "orders"
         let orders = $$.querySelectorAll('[data-areatype=orders]')
         let trafficePackages = $$.querySelectorAll('[data-areatype=trafficePackages]')
-
         let switchToOrders = new UIswitch('orders', trafficePackages, orders, 'flex', 'tempordertype');
         switchToOrders.listenSwitch();
-
         let switchToTrafficePackages = new UIswitch('traffice-packages', orders, trafficePackages, 'flex', 'tempordertype');
         switchToTrafficePackages.listenSwitch();
-
         switchToOrders.setDefault();
         switchToTrafficePackages.setDefault();
-
     })();
-
-
     $("#coupon_input").click(function () {
         $.ajax({
             type: "POST",
@@ -423,21 +383,17 @@
             }
         })
     });
-
     $("#order_input").click(function () {
-
         if (document.getElementById('autorenew').checked) {
             var autorenew = 1;
         } else {
             var autorenew = 0;
         }
-
         if (document.getElementById('disableothers').checked) {
             var disableothers = 1;
         } else {
             var disableothers = 0;
         }
-
         $.ajax({
             type: "POST",
             url: "buy",
@@ -466,5 +422,4 @@
             }
         })
     });
-
 </script>

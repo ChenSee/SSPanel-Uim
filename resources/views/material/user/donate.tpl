@@ -9,14 +9,12 @@
     <div class="container">
         <section class="content-inner margin-top-no">
             <div class="row">
-
-
                 <div class="col-lg-12 col-md-12">
                     <div class="card margin-bottom-no">
                         <div class="card-main">
                             <div class="card-inner">
                                 <p>感谢各位捐赠来支撑服务器的日常支出！您可以在<a href="/user/code">充值界面</a>进行充值，这样就等同于捐赠了。</p>
-                                {if $user->isAdmin()}
+                                {if $user->is_admin}
                                     <p>总收入：{$total_in} 元</p>
                                 {/if}
 
@@ -24,7 +22,6 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="col-lg-12 col-md-12">
                     <div class="card margin-bottom-no">
                         <div class="card-main">
@@ -44,7 +41,6 @@
                                                    data="hide">不匿名</a></li>
                                         </ul>
                                     </div>
-
                                 </div>
                                 <div class="card-action">
                                     <div class="card-action-btn pull-left">
@@ -56,16 +52,13 @@
                         </div>
                     </div>
                 </div>
-
-
                 <div class="col-lg-12 col-md-12">
                     <div class="card margin-bottom-no">
                         <div class="card-main">
                             <div class="card-inner">
-
                                 <div class="card-table">
                                     <div class="table-responsive table-user">
-                                        {$codes->render()}
+                                        {$render}
                                         <table class="table table-hover">
                                             <tr>
                                                 <th>ID</th>
@@ -74,7 +67,6 @@
                                                 <th>操作</th>
                                                 <th>备注</th>
                                                 <th>时间</th>
-
                                             </tr>
                                             {foreach $codes as $code}
                                                 <tr>
@@ -101,22 +93,18 @@
                                                 </tr>
                                             {/foreach}
                                         </table>
-                                        {$codes->render()}
+                                        {$render}
                                     </div>
                                 </div>
-
-
                             </div>
                         </div>
                     </div>
                 </div>
-
                 {include file='dialog.tpl'}
             </div>
         </section>
     </div>
 </main>
-
 
 {include file='user/footer.tpl'}
 

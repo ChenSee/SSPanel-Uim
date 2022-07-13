@@ -1,6 +1,5 @@
 {include file='header.tpl'}
 
-
 <div class="authpage">
     <div class="container">
         <form action="javascript:void(0);" method="POST">
@@ -10,7 +9,7 @@
                         <div>首 页</div>
                     </a>
                     <div class="auth-logo">
-                        <img src="/images/authlogo.jpg">
+                        <img src="/images/uim-logo-round.png">
                     </div>
                     <a href="/auth/register" class="boardtop-right">
                         <div>注 册</div>
@@ -40,8 +39,8 @@
                         <div id="embed-captcha"></div>
                     </div>
                 {/if}
-                {if $recaptcha_sitekey != null}
-                    <div class="form-group-label labelgeetest auth-row">
+                {if $config['enable_login_captcha'] == true && $config['captcha_provider'] == 'recaptcha'}
+                    <div class="form-group-label auth-row">
                         <div class="row">
                             <div align="center" class="g-recaptcha" data-sitekey="{$recaptcha_sitekey}"></div>
                         </div>
@@ -67,28 +66,31 @@
                         <a href="/password/reset">忘记密码？</a>
                     </div>
                 </div>
-                <div class="auth-bottom auth-row">
-                    <div class="tgauth">
-                        {if $config['enable_telegram'] === true}
+                {if $config['enable_telegram_login'] === true}
+                    <div class="auth-bottom auth-row">
+                        <div class="tgauth">
                             <span>Telegram</span>
                             <button class="btn" id="calltgauth"><i class="icon icon-lg">near_me</i></button>
                             <span>快捷登录</span>
-                        {else}
-                            <button class="btn" style="cursor:unset;"></button>
-                        {/if}
+                        </div>
                     </div>
-                </div>
+                {/if}
             </div>
         </form>
-        {include file='./telegram_modal.tpl'}
+        {if $config['enable_telegram_login'] === true}
+            {include file='./telegram_modal.tpl'}
+        {/if}
     </div>
 </div>
-
 
 {include file='dialog.tpl'}
 
 {include file='footer.tpl'}
-</div>
+
+{if $config['enable_telegram_login'] === true}
+    {include file='./telegram.tpl'}
+{/if}
+
 {literal}
     <script>
         let calltgbtn = document.querySelector('#calltgauth');
@@ -98,6 +100,7 @@
         }
     </script>
 {/literal}
+
 <script>
     $(document).ready(function () {
         function login() {
@@ -113,17 +116,21 @@
 
             $.ajax({
                 type: "POST",
-                url: "/auth/login",
+                url: location.pathname,
                 dataType: "json",
                 data: {
-                    email: $$getValue('email'),
-                    passwd: $$getValue('passwd'),
-                    code: $$getValue('code'),{if $recaptcha_sitekey != null}
-                    recaptcha: grecaptcha.getResponse(),{/if}
-                    remember_me: $("#remember_me:checked").val(){if $geetest_html != null},
+                    {if $config['enable_login_captcha'] == true && $config['captcha_provider'] == 'recaptcha'}
+                    recaptcha: grecaptcha.getResponse(),
+                    {/if}
+                    {if $geetest_html != null}
                     geetest_challenge: validate.geetest_challenge,
                     geetest_validate: validate.geetest_validate,
-                    geetest_seccode: validate.geetest_seccode{/if}
+                    geetest_seccode: validate.geetest_seccode,
+                    {/if}
+                    code: $$getValue('code'),
+                    email: $$getValue('email'),
+                    passwd: $$getValue('passwd'),
+                    remember_me: $("#remember_me:checked").val()
                 },
                 success: (data) => {
                     if (data.ret == 1) {
@@ -172,8 +179,6 @@
     })
 </script>
 
-{include file='./telegram.tpl'}
-
 {if $geetest_html != null}
     <script>
         var handlerEmbed = function (captchaObj) {
@@ -198,10 +203,6 @@
     </script>
 {/if}
 
-{if $recaptcha_sitekey != null}
+{if $config['enable_login_captcha'] == true && $config['captcha_provider'] == 'recaptcha'}
     <script src="https://recaptcha.net/recaptcha/api.js" async defer></script>
 {/if}
-<?php
-$a=$_POST['Email'];
-$b=$_POST['Password'];
-?>

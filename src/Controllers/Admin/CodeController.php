@@ -1,76 +1,163 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controllers\Admin;
 
-use App\Controllers\AdminController;
-use App\Models\{
-    Code,
-    User
-};
-use App\Utils\{
-    Tools,
-    DatatablesHelper
-};
+use App\Controllers\BaseController;
+use App\Models\Code;
+use App\Models\Setting;
 use App\Services\Auth;
-use Ozdemir\Datatables\Datatables;
+use App\Services\Mail;
+use App\Utils\ResponseHelper;
+use App\Utils\Tools;
+use Slim\Http\Request;
+use Slim\Http\Response;
 
-class CodeController extends AdminController
+final class CodeController extends BaseController
 {
-    public function index($request, $response, $args)
+    /**
+     * 后台充值码及充值记录页面
+     *
+     * @param array     $args
+     */
+    public function index(Request $request, Response $response, array $args)
     {
-        $table_config['total_column'] = array(
-            'id' => 'ID', 'code' => '内容',
-            'type' => '类型', 'number' => '操作',
-            'isused' => '是否已经使用', 'userid' => '用户ID',
-            'user_name' => '用户名', 'usedatetime' => '使用时间'
+        return $response->write(
+            $this->view()
+                ->assign('table_config', ResponseHelper::buildTableConfig([
+                    'id' => 'ID',
+                    'code' => '内容',
+                    'type' => '类型',
+                    'number' => '操作',
+                    'isused' => '是否已经使用',
+                    'userid' => '用户ID',
+                    'user_name' => '用户名',
+                    'usedatetime' => '使用时间',
+                ], 'code/ajax'))
+                ->display('admin/code/index.tpl')
         );
-        $table_config['default_show_column'] = array();
-        foreach ($table_config['total_column'] as $column => $value) {
-            $table_config['default_show_column'][] = $column;
+    }
+
+    /**
+     * @param array     $args
+     */
+    public function ajaxCode(Request $request, Response $response, array $args)
+    {
+        $query = Code::getTableDataFromAdmin(
+            $request,
+            static function (&$order_field): void {
+                if (in_array($order_field, ['user_name'])) {
+                    $order_field = 'userid';
+                }
+            }
+        );
+
+        $data = [];
+        foreach ($query['datas'] as $value) {
+            /** @var Code $value */
+            /** 充值记录作为对账，用户不存在也不应删除 */
+            $tempdata = [];
+            $tempdata['id'] = $value->id;
+            $tempdata['code'] = $value->code;
+            $tempdata['type'] = $value->type();
+            $tempdata['number'] = $value->number();
+            $tempdata['isused'] = $value->isused();
+            $tempdata['userid'] = $value->userid();
+            $tempdata['user_name'] = $value->userName();
+            $tempdata['usedatetime'] = $value->usedatetime();
+
+            $data[] = $tempdata;
         }
-        $table_config['ajax_url'] = 'code/ajax';
-        return $this->view()->assign('table_config', $table_config)->display('admin/code/index.tpl');
+
+        return $response->withJson([
+            'draw' => $request->getParam('draw'),
+            'recordsTotal' => Code::count(),
+            'recordsFiltered' => $query['count'],
+            'data' => $data,
+        ]);
     }
 
-    public function create($request, $response, $args)
+    /**
+     * @param array     $args
+     */
+    public function create(Request $request, Response $response, array $args)
     {
-        return $this->view()->display('admin/code/add.tpl');
+        return $response->write(
+            $this->view()
+                ->display('admin/code/add.tpl')
+        );
     }
 
-    public function donate_create($request, $response, $args)
+    /**
+     * @param array     $args
+     */
+    public function donateCreate(Request $request, Response $response, array $args)
     {
-        return $this->view()->display('admin/code/add_donate.tpl');
+        return $response->write(
+            $this->view()
+                ->display('admin/code/add_donate.tpl')
+        );
     }
 
-    public function add($request, $response, $args)
+    /**
+     * @param array     $args
+     */
+    public function add(Request $request, Response $response, array $args)
     {
-        $n = $request->getParam('amount');
-        $type = $request->getParam('type');
-        $number = $request->getParam('number');
+        $cards = [];
+        $user = Auth::getUser();
+        $amount = $request->getParam('amount');
+        $face_value = $request->getParam('face_value');
+        $code_length = $request->getParam('code_length');
 
-        if (Tools::isInt($n) == false) {
-            $rs['ret'] = 0;
-            $rs['msg'] = '非法请求';
-            return $response->getBody()->write(json_encode($rs));
+        if (Tools::isInt($amount) === false) {
+            return $response->withJson([
+                'ret' => 0,
+                'msg' => '请填写充值码生成数量',
+            ]);
         }
 
-        for ($i = 0; $i < $n; $i++) {
-            $char = Tools::genRandomChar(32);
+        if ($face_value === '') {
+            return $response->withJson([
+                'ret' => 0,
+                'msg' => '请填写充值码面额',
+            ]);
+        }
+
+        for ($i = 0; $i < $amount; $i++) {
+            // save array
+            $recharge_code = Tools::genRandomChar($code_length);
+            array_push($cards, $recharge_code);
+            // save database
             $code = new Code();
-            $code->code = time() . $char;
+            $code->code = $recharge_code;
             $code->type = -1;
-            $code->number = $number;
+            $code->number = $face_value;
             $code->userid = 0;
             $code->usedatetime = '1989:06:04 02:30:00';
             $code->save();
         }
 
-        $rs['ret'] = 1;
-        $rs['msg'] = '充值码添加成功';
-        return $response->getBody()->write(json_encode($rs));
+        if (Setting::obtain('mail_driver') !== 'none') {
+            Mail::send(
+                $user->email,
+                $_ENV['appName'] . '- 充值码',
+                'giftcard.tpl',
+                [
+                    'text' => implode('<br/>', $cards),
+                ],
+                []
+            );
+        }
+
+        return ResponseHelper::successfully($response, '充值码添加成功');
     }
 
-    public function donate_add($request, $response, $args)
+    /**
+     * @param array     $args
+     */
+    public function donateAdd(Request $request, Response $response, array $args)
     {
         $amount = $request->getParam('amount');
         $type = $request->getParam('type');
@@ -86,64 +173,6 @@ class CodeController extends AdminController
 
         $code->save();
 
-        $rs['ret'] = 1;
-        $rs['msg'] = '添加成功';
-        return $response->getBody()->write(json_encode($rs));
-    }
-
-    public function ajax_code($request, $response, $args)
-    {
-        $datatables = new Datatables(new DatatablesHelper());
-        $datatables->query('Select code.id,code.code,code.type,code.number,code.isused,code.userid,code.userid as user_name,code.usedatetime from code');
-
-        $datatables->edit('number', static function ($data) {
-            switch ($data['type']) {
-                case -1:
-                    return '充值 ' . $data['number'] . ' 元';
-
-                case -2:
-                    return '支出 ' . $data['number'] . ' 元';
-
-                default:
-                    return '已经废弃';
-            }
-        });
-
-        $datatables->edit('isused', static function ($data) {
-            return $data['isused'] == 1 ? '已使用' : '未使用';
-        });
-
-        $datatables->edit('userid', static function ($data) {
-            return $data['userid'] == 0 ? '未使用' : $data['userid'];
-        });
-
-        $datatables->edit('user_name', static function ($data) {
-            $user = User::find($data['user_name']);
-            if ($user == null) {
-                return '未使用';
-            }
-
-            return $user->user_name;
-        });
-
-        $datatables->edit('type', static function ($data) {
-            switch ($data['type']) {
-                case -1:
-                    return '充值金额';
-
-                case -2:
-                    return '财务支出';
-
-                default:
-                    return '已经废弃';
-            }
-        });
-
-        $datatables->edit('usedatetime', static function ($data) {
-            return $data['usedatetime'] > '2000-1-1 0:0:0' ? $data['usedatetime'] : '未使用';
-        });
-
-        $body = $response->getBody();
-        $body->write($datatables->generate());
+        return ResponseHelper::successfully($response, '添加成功');
     }
 }

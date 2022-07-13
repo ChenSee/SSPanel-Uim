@@ -1,10 +1,9 @@
 {include file='user/main.tpl'}
 
-
 <main class="content">
     <div class="content-header ui-content-header">
         <div class="container">
-            <h1 class="content-heading">我的账户</h1>
+            <h1 class="content-heading">账户信息</h1>
         </div>
     </div>
     <div class="container">
@@ -26,18 +25,13 @@
                                             </div>
                                         </div>
                                     {/if}
-                                    <dl class="dl-horizontal">
-                                        <dt>用户名</dt>
-                                        <dd>{$user->user_name}</dd>
-                                        <dt>邮箱</dt>
-                                        <dd>{$user->email}</dd>
-                                    </dl>
+                                    <p>昵称：<code>{$user->user_name}</code></p>
+                                    <p>邮箱：<code>{$user->email}</code></p>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-
                 <div class="col-lg-12 col-md-12">
                     <div class="card">
                         <div class="card-main">
@@ -45,7 +39,6 @@
                                 <div class="card-doubleinner">
                                     <p class="card-heading">当前生效中的套餐</p>
                                 </div>
-
                                 <div class="card-table">
                                     <div class="table-responsive table-user">
                                         <table class="table">
@@ -64,9 +57,9 @@
                                                 <tr>
                                                     <td>#{$bought->id}</td>
                                                     <td>{$bought->shop()->name}</td>
-                                                    <td>{$bought->used_days()} 天</td>
-                                                    <td>{$bought->reset_time()}</td>
-                                                    <td>{$bought->exp_time()}</td>
+                                                    <td>{$bought->usedDays()} 天</td>
+                                                    <td>{$bought->resetTime()}</td>
+                                                    <td>{$bought->expTime()}</td>
                                                 </tr>
                                           		{/if}
                                           	{/foreach}
@@ -78,7 +71,6 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="col-lg-6 col-md-6">
                     <div class="card">
                         <div class="card-main">
@@ -91,13 +83,11 @@
                                     <div class="table-responsive table-user">
                                         <table class="table table-fixed">
                                             <tr>
-
                                                 <th>IP</th>
                                                 <th>归属地</th>
                                             </tr>
                                             {foreach $userip as $single=>$location}
                                                 <tr>
-
                                                     <td>{$single}</td>
                                                     <td>{$location}</td>
                                                 </tr>
@@ -109,7 +99,6 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="col-lg-6 col-md-6">
                     <div class="card">
                         <div class="card-main">
@@ -120,17 +109,17 @@
                                 </div>
                                 <div class="card-table">
                                     <div class="table-responsive table-user">
-                                        <table class="table table-fixed">
+                                        <table class="table">
                                             <tr>
-
                                                 <th>IP</th>
-                                                <th>归属地</th>
+                                                <th>时间</th>
+                                                <th>归属</th>
                                             </tr>
-                                            {foreach $userloginip as $single=>$location}
+                                            {foreach $userloginip as $login}
                                                 <tr>
-
-                                                    <td>{$single}</td>
-                                                    <td>{$location}</td>
+                                                    <td>{$login->ip}</td>
+                                                    <td>{date('Y-m-d H:i:s', $login->datetime)}</td>
+                                                    <td>{Tools::getIpInfo($login->ip)}</td>
                                                 </tr>
                                             {/foreach}
                                         </table>
@@ -140,11 +129,9 @@
                         </div>
                     </div>
                 </div>
-
             </div>
         </section>
     </div>
 </main>
-
 
 {include file='user/footer.tpl'}

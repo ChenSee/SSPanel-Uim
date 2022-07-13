@@ -1,12 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
-use App\Models\User;
 use App\Models\Node;
+use App\Models\User;
 use App\Utils\Tools;
 
-class Analytics
+final class Analytics
 {
     public function getTotalUser()
     {
@@ -35,7 +37,6 @@ class Analytics
         return Tools::flowAutoShow($total);
     }
 
-
     public function getRawTodayTrafficUsage()
     {
         return User::sum('u') + User::sum('d') - User::sum('last_day_t');
@@ -46,7 +47,6 @@ class Analytics
         $total = User::sum('last_day_t');
         return Tools::flowAutoShow($total);
     }
-
 
     public function getRawLastTrafficUsage()
     {
@@ -64,11 +64,10 @@ class Analytics
         return User::sum('transfer_enable') - User::sum('u') - User::sum('d');
     }
 
-
     public function getTotalTraffic()
     {
         $total = User::sum('transfer_enable');
-        return Tools::flowAutoShow($total);
+        return Tools::flowAutoShow(intval($total));
     }
 
     public function getRawTotalTraffic()
@@ -95,12 +94,13 @@ class Analytics
     public function getTotalNodes()
     {
         return Node::where('node_heartbeat', '>', 0)->where(
-            static function ($query) {
+            static function ($query): void {
                 $query->Where('sort', '=', 0)
                     ->orWhere('sort', '=', 10)
                     ->orWhere('sort', '=', 11)
                     ->orWhere('sort', '=', 12)
-                    ->orWhere('sort', '=', 13);
+                    ->orWhere('sort', '=', 13)
+                    ->orWhere('sort', '=', 14);
             }
         )->count();
     }
@@ -108,12 +108,13 @@ class Analytics
     public function getAliveNodes()
     {
         return Node::where(
-            static function ($query) {
+            static function ($query): void {
                 $query->Where('sort', '=', 0)
                     ->orWhere('sort', '=', 10)
                     ->orWhere('sort', '=', 11)
                     ->orWhere('sort', '=', 12)
-                    ->orWhere('sort', '=', 13);
+                    ->orWhere('sort', '=', 13)
+                    ->orWhere('sort', '=', 14);
             }
         )->where('node_heartbeat', '>', time() - 90)->count();
     }

@@ -1,18 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
-use Smarty;
 use App\Utils;
+use Smarty;
 
-class View
+final class View
 {
     public static $connection;
     public static $beginTime;
 
     public static function getSmarty()
     {
-        $smarty = new smarty(); //实例化smarty
+        $smarty = new Smarty(); //实例化smarty
 
         $user = Auth::getUser();
 
@@ -33,12 +35,6 @@ class View
         $smarty->assign('config', Config::getPublicConfig());
         $smarty->assign('user', $user);
         $smarty->assign('can_backtoadmin', $can_backtoadmin);
-
-        if (self::$connection) {
-            $smarty->assign('queryLog', self::$connection->connection('default')->getQueryLog());
-            $optTime = microtime(true) - self::$beginTime;
-            $smarty->assign('optTime', $optTime * 1000);
-        }
 
         return $smarty;
     }

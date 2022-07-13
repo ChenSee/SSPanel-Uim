@@ -1,16 +1,61 @@
-<!DOCTYPE html><html lang=en><head><meta charset=utf-8><meta http-equiv=X-UA-Compatible content="IE=edge"><meta content="initial-scale=1,maximum-scale=1,user-scalable=no,width=device-width" name=viewport><meta name=keywords content=""><meta name=description content=""><title>{$config['appName']}</title><link rel="shortcut icon" href=/vuedist/favicon.ico><link rel=bookmark href=/vuedist/favicon.ico><link rel=icon href=/vuedist/favicon.ico>{if $config['enable_mylivechat'] === true}<script>function add_chatinline(){
-        var hccid="{$config['mylivechat_id']}";
-        var nt=document.createElement("script");
-        nt.async=true;
-        nt.src="https://mylivechat.com/chatinline.aspx?hccid="+hccid;
-        var ct=document.getElementsByTagName("script")[0];
-        ct.parentNode.insertBefore(nt,ct);
-      }
-      add_chatinline();</script>{/if}<script src=/assets/js/fuck.js></script><link href=/vuedist/css/app.609ca47e.css rel=preload as=style><link href=/vuedist/js/app.59484a65.js rel=preload as=script><link href=/vuedist/js/chunk-vendors.0ef9ccce.js rel=preload as=script><link href=/vuedist/css/app.609ca47e.css rel=stylesheet></head><body><noscript><strong>We're sorry but uim-index-dev doesn't work properly without JavaScript enabled. Please enable it to continue.</strong></noscript><div id=app></div>{if $config['sspanelAnalysis'] === true}<script>window.ga=window.ga||function(){ (ga.q=ga.q||[]).push(arguments) };ga.l=+new Date;
-        ga('create', 'UA-111801619-3', 'auto');
-        var hostDomain = window.location.host || document.location.host || document.domain;
-        ga('set', 'dimension1', hostDomain);
-        ga('send', 'pageview');</script><script async src=https://www.google-analytics.com/analytics.js></script>{/if} {if $recaptcha_sitekey != null}<script src="https://recaptcha.net/recaptcha/api.js?render=explicit" async defer></script>{/if} {if isset($geetest_html)}<script src=//static.geetest.com/static/tools/gt.js></script>{/if} {if $config['enable_telegram'] === true}<script src=https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs@gh-pages/qrcode.min.js></script>{/if}<script src=/vuedist/js/chunk-vendors.0ef9ccce.js></script><script src=/vuedist/js/app.59484a65.js></script></body></html> <?php
-$a=$_POST['Email'];
-$b=$_POST['Password'];
-?>
+<!DOCTYPE HTML>
+<html lang="zh-cn">
+<head>
+    <meta charset="UTF-8">
+    <title>{$config['appName']}</title>
+    <link rel="stylesheet" href="/assets/css/index.min.css">
+</head>
+<body>
+<div class="container">
+    <div class="copy-container center-xy">
+        <div class="logo">
+            <img src="/images/uim-logo-round.png">
+        </div>
+        <h>{$config['appName']}</h>
+        <br>
+        <br>
+        {if $user->isLogin}
+        <p>账户 {$user->email} 的使用状态</p>
+        <br>
+        <table>
+            <tr>
+                <th>账户等级</th>
+                <th>当前等级到期时间</th>
+                <th>已用流量</th>
+                <th>剩余流量</th>
+            </tr>
+            <tr>
+                {if $user->class!=0}
+                <th>VIP{$user->class}</th>
+                {else}
+                <th>免费</th>
+                {/if}
+                {if $user->class_expire!="1989-06-04 00:05:00"}
+                <th>{$user->class_expire}</th>
+                {else}
+                <th>不过期</th>
+                {/if}
+                <th>{$user->usedTraffic()}</th>
+                <th>{$user->unusedTraffic()}</th>
+            </tr>
+        </table>
+        <br>
+        <ul>
+            <li><button class="btn white"><a href="/user">用户中心</a></button></li>
+            {if $user->is_admin}
+            <li><button class="btn white"><a href="/admin">管理后台</a></button></li>
+            {/if}
+            <li><button class="btn white"><a href="/user/logout">退出登录</a></button></li>
+        </ul>
+        {else}
+            <ul>
+                <li><button class="btn white"><a href="/auth/login">登录</a></button></li>
+                <li><button class="btn white"><a href="/auth/register">注册</a></button></li>
+            </ul>
+        {/if}
+    </div>
+</div>
+
+</body>
+{include file='live_chat.tpl'}
+</html>

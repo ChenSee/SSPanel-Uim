@@ -1,16 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Utils\Telegram\Commands;
 
 use App\Models\User;
-use App\Utils\Telegram\TelegramTools;
 use Telegram\Bot\Actions;
 use Telegram\Bot\Commands\Command;
 
 /**
  * Class CheckinCommand.
  */
-class CheckinCommand extends Command
+final class CheckinCommand extends Command
 {
     /**
      * @var string Command Name
@@ -25,7 +26,7 @@ class CheckinCommand extends Command
     /**
      * {@inheritdoc}
      */
-    public function handle($arguments)
+    public function handle()
     {
         $Update = $this->getUpdate();
         $Message = $Update->getMessage();
@@ -34,18 +35,11 @@ class CheckinCommand extends Command
         $ChatID = $Message->getChat()->getId();
 
         if ($ChatID < 0) {
-            // 群组
-            if ($_ENV['enable_delete_user_cmd'] === true) {
-                TelegramTools::DeleteMessage([
-                    'chatid'      => $ChatID,
-                    'messageid'   => $Message->getMessageId(),
-                ]);
-            }
             if ($_ENV['telegram_group_quiet'] === true) {
                 // 群组中不回应
                 return;
             }
-            if ($ChatID != $_ENV['telegram_chatid']) {
+            if ($ChatID !== $_ENV['telegram_chatid']) {
                 // 非我方群组
                 return;
             }
@@ -56,17 +50,17 @@ class CheckinCommand extends Command
 
         // 触发用户
         $SendUser = [
-            'id'       => $Message->getFrom()->getId(),
-            'name'     => $Message->getFrom()->getFirstName() . ' ' . $Message->getFrom()->getLastName(),
+            'id' => $Message->getFrom()->getId(),
+            'name' => $Message->getFrom()->getFirstName() . ' ' . $Message->getFrom()->getLastName(),
             'username' => $Message->getFrom()->getUsername(),
         ];
 
         $User = User::where('telegram_id', $SendUser['id'])->first();
-        if ($User == null) {
+        if ($User === null) {
             // 回送信息
             $response = $this->replyWithMessage(
                 [
-                    'text'       => $_ENV['user_not_bind_reply'],
+                    'text' => $_ENV['user_not_bind_reply'],
                     'parse_mode' => 'Markdown',
                 ]
             );
@@ -75,18 +69,11 @@ class CheckinCommand extends Command
             // 回送信息
             $response = $this->replyWithMessage(
                 [
-                    'text'                  => $checkin['msg'],
-                    'reply_to_message_id'   => $Message->getMessageId(),
-                    'parse_mode'            => 'Markdown',
+                    'text' => $checkin['msg'],
+                    'reply_to_message_id' => $Message->getMessageId(),
+                    'parse_mode' => 'Markdown',
                 ]
             );
-        }
-        if ($ChatID < 0) {
-            // 消息删除任务
-            TelegramTools::DeleteMessage([
-                'chatid'      => $ChatID,
-                'messageid'   => $response->getMessageId(),
-            ]);
         }
         return $response;
     }

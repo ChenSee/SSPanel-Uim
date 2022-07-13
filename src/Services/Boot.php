@@ -1,42 +1,36 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
-use Illuminate\Database\Capsule\Manager as Capsule;
+use Sentry;
 
-class Boot
+final class Boot
 {
-    public static function setTime()
+    public static function setTime(): void
     {
         date_default_timezone_set($_ENV['timeZone']);
         View::$beginTime = microtime(true);
     }
 
-    public static function bootDb()
+    public static function bootDb(): void
     {
-        // Init Eloquent ORM Connection
-        $capsule = new Capsule();
-        try {
-            $capsule->addConnection(Config::getDbConfig());
-            $capsule->getConnection()->getPdo();
-        } catch (\Exception $e) {
-            die('Could not connect to main database: ' . $e->getMessage());
+        DB::init();
+    }
+
+    public static function bootSentry(): void
+    {
+        if (! isset($_ENV['sentry_dsn'])) {
+            Sentry\init([
+                'dsn' => $_ENV['sentry_dsn'],
+                'prefixes' => [
+                    realpath(__DIR__ . '/../../'),
+                ],
+                'in_app_exclude' => [
+                    realpath(__DIR__ . '/../../vendor'),
+                ],
+            ]);
         }
-
-        $capsule->setAsGlobal();
-
-        if ($_ENV['enable_radius'] === true) {
-            try {
-                $capsule->addConnection(Config::getRadiusDbConfig(), 'radius');
-                $capsule->getConnection('radius')->getPdo();
-            } catch (\Exception $e) {
-                die('Could not connect to radius database: ' . $e->getMessage());
-            }
-        }
-        
-        $capsule->bootEloquent();
-
-        View::$connection = $capsule->getDatabaseManager();
-        $capsule->getDatabaseManager()->connection('default')->enableQueryLog();
     }
 }

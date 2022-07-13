@@ -1,5 +1,5 @@
 {include file='admin/main.tpl'}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/editor.md@1.5.0/css/editormd.min.css"/>
+<link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/editor.md@1.5.0/css/editormd.min.css"/>
 
 <main class="content">
     <div class="content-header ui-content-header">
@@ -24,7 +24,6 @@
                         </div>
                     </div>
                 </div>
-
                 <div aria-hidden="true" class="modal modal-va-middle fade" id="changetouser_modal" role="dialog"
                      tabindex="-1">
                     <div class="modal-dialog modal-xs">
@@ -45,7 +44,6 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="card">
                     <div class="card-main">
                         <div class="card-inner">
@@ -63,14 +61,13 @@
                         </div>
                     </div>
                 </div>
-
-                {$ticketset->render()}
+                {$render}
                 {foreach $ticketset as $ticket}
                     <div class="card">
                         <aside class="card-side pull-left" style="padding: 16px; text-align: center">
-                            <img style="border-radius: 100%; width: 100%" src="{$ticket->User()->gravatar}">
+                            <img style="border-radius: 100%; width: 100%" src="{$ticket->user()->gravatar}">
                             <br>
-                            {$ticket->User()->user_name}
+                            {$ticket->user()->user_name}
                         </aside>
                         <div class="card-main">
                             <div class="card-inner">
@@ -80,24 +77,19 @@
                         </div>
                     </div>
                 {/foreach}
-                {$ticketset->render()}
-
-
+                {$render}
                 {include file='dialog.tpl'}
-
         </div>
-
     </div>
 </main>
 
 {include file='admin/footer.tpl'}
 
-<script src="https://cdn.jsdelivr.net/npm/editor.md@1.5.0/editormd.min.js"></script>
+<script src="https://cdn.staticfile.org/editor-md/1.5.0/editormd.min.js"></script>
 <script>
     function changetouser_modal_show() {
         $("#changetouser_modal").modal();
     }
-
     window.addEventListener('load', () => {
         function submit() {
             $("#result").modal();
@@ -128,17 +120,14 @@
                 }
             });
         }
-
         $$.getElementById('submit').addEventListener('click', () => {
             status = 1;
             submit();
         });
-
         $$.getElementById('close').addEventListener('click', () => {
             status = 0;
             submit();
         });
-
         $$.getElementById('close_directly').addEventListener('click', () => {
             status = 0;
             $("#result").modal();
@@ -169,14 +158,13 @@
                 }
             });
         });
-
         function changetouser_id() {
             $.ajax({
                 type: "POST",
                 url: "/admin/user/changetouser",
                 dataType: "json",
                 data: {
-                    userid: {$ticket->User()->id},
+                    userid: {$ticket->user()->id},
                     adminid: {$user->id},
                     local: '/admin/ticket/' + {$ticket->id} +'/view'
                 },
@@ -198,16 +186,13 @@
                 }
             });
         }
-
         $$.getElementById('changetouser_input').addEventListener('click', () => {
             changetouser_id();
         });
-
     });
-
     (() => {
         editor = editormd("editormd", {
-            path: "https://cdn.jsdelivr.net/npm/editor.md@1.5.0/lib/", // Autoload modules mode, codemirror, marked... dependents libs path
+            path: "https://fastly.jsdelivr.net/npm/editor.md@1.5.0/lib/", // Autoload modules mode, codemirror, marked... dependents libs path
             height: 450,
             saveHTMLToTextarea: true,
             emoji: true
@@ -221,5 +206,4 @@
         });
         */
     })();
-
 </script>

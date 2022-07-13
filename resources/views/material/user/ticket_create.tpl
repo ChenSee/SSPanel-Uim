@@ -1,5 +1,5 @@
 {include file='user/main.tpl'}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/editor.md@1.5.0/css/editormd.min.css"/>
+<link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/editor.md@1.5.0/css/editormd.min.css"/>
 
 <main class="content">
     <div class="content-header ui-content-header">
@@ -18,12 +18,9 @@
                                 <label class="floating-label" for="title">标题</label>
                                 <input class="form-control maxwidth-edit" id="title" type="text">
                             </div>
-
-
                         </div>
                     </div>
                 </div>
-
                 <div class="card">
                     <div class="card-main">
                         <div class="card-inner">
@@ -36,8 +33,6 @@
                         </div>
                     </div>
                 </div>
-
-
                 <div class="card">
                     <div class="card-main">
                         <div class="card-inner">
@@ -52,26 +47,20 @@
                         </div>
                     </div>
                 </div>
-
                 {include file='dialog.tpl'}
             </section>
-
         </div>
-
-
     </div>
 </main>
 
-
 {include file='user/footer.tpl'}
 
-
-<script src="https://cdn.jsdelivr.net/npm/editor.md@1.5.0/editormd.min.js"></script>
+<script src="https://cdn.staticfile.org/editor-md/1.5.0/editormd.min.js"></script>
 <script>
     $(document).ready(function () {
         function submit() {
             $("#result").modal();
-            $$.getElementById('msg').innerHTML = '正在提交付...'
+            $$.getElementById('msg').innerHTML = '正在提交...'
             $.ajax({
                 type: "POST",
                 url: "/user/ticket",
@@ -100,20 +89,17 @@
                 }
             });
         }
-
         $("#submit").click(function () {
             submit();
         });
     });
-
     $(function () {
         editor = editormd("editormd", {
-            path: "https://cdn.jsdelivr.net/npm/editor.md@1.5.0/lib/", // Autoload modules mode, codemirror, marked... dependents libs path
+            path: "https://fastly.jsdelivr.net/npm/editor.md@1.5.0/lib/", // Autoload modules mode, codemirror, marked... dependents libs path
             height: 720,
             saveHTMLToTextarea: true,
             emoji: true
         });
-
         /*
         // or
         var editor = editormd({
@@ -123,10 +109,3 @@
         */
     });
 </script>
-
-
-
-
-
-
-

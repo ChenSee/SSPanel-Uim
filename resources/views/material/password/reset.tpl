@@ -11,7 +11,7 @@
                     <div>首 页</div>
                 </a>
                 <div class="auth-logo">
-                    <img src="/images/authlogo.jpg">
+                    <img src="/images/uim-logo-round.png">
                 </div>
                 <a href="/auth/login" class="boardtop-right">
                     <div>登 录</div>
@@ -79,7 +79,7 @@
             $$.getElementById('msg').innerHTML = '发送中，请等待'
             $.ajax({
                 type: "POST",
-                url: "/password/reset",
+                url: location.pathname,
                 dataType: "json",
                 data: {
                     email: $$getValue('email'),

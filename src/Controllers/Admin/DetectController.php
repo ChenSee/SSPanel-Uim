@@ -1,56 +1,90 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controllers\Admin;
 
-use App\Controllers\AdminController;
+use App\Controllers\BaseController;
+use App\Models\DetectLog;
 use App\Models\DetectRule;
-use App\Utils\{
-    Telegram,
-    DatatablesHelper
-};
-use Ozdemir\Datatables\Datatables;
+use App\Utils\ResponseHelper;
+use App\Utils\Telegram;
+use Slim\Http\Request;
+use Slim\Http\Response;
 
-class DetectController extends AdminController
+final class DetectController extends BaseController
 {
-    public function index($request, $response, $args)
+    /**
+     * @param array     $args
+     */
+    public function index(Request $request, Response $response, array $args)
     {
-        $table_config['total_column'] = array(
-            'op' => '操作', 'id' => 'ID', 'name' => '名称',
-            'text' => '介绍', 'regex' => '正则表达式',
-            'type' => '类型'
+        return $response->write(
+            $this->view()
+                ->assign('table_config', ResponseHelper::buildTableConfig([
+                    'op' => '操作',
+                    'id' => 'ID',
+                    'name' => '名称',
+                    'text' => '介绍',
+                    'regex' => '正则表达式',
+                    'type' => '类型',
+                ], 'detect/ajax'))
+                ->display('admin/detect/index.tpl')
         );
-        $table_config['default_show_column'] = array();
-        foreach ($table_config['total_column'] as $column => $value) {
-            $table_config['default_show_column'][] = $column;
-        }
-        $table_config['ajax_url'] = 'detect/ajax';
-        return $this->view()->assign('table_config', $table_config)->display('admin/detect/index.tpl');
     }
 
-    public function log($request, $response, $args)
+    /**
+     * @param array     $args
+     */
+    public function ajaxRule(Request $request, Response $response, array $args)
     {
-        $table_config['total_column'] = array(
-            'id' => 'ID', 'user_id' => '用户ID',
-            'user_name' => '用户名', 'node_id' => '节点ID',
-            'node_name' => '节点名', 'rule_id' => '规则ID',
-            'rule_name' => '规则名', 'rule_text' => '规则描述',
-            'rule_regex' => '规则正则表达式', 'rule_type' => '规则类型',
-            'datetime' => '时间'
+        $query = DetectRule::getTableDataFromAdmin(
+            $request,
+            static function (&$order_field): void {
+                if (in_array($order_field, ['op'])) {
+                    $order_field = 'id';
+                }
+            }
         );
-        $table_config['default_show_column'] = array();
-        foreach ($table_config['total_column'] as $column => $value) {
-            $table_config['default_show_column'][] = $column;
+
+        $data = [];
+        foreach ($query['datas'] as $value) {
+            /** @var DetectRule $value */
+
+            $tempdata = [];
+            $tempdata['op'] = '<a class="btn btn-brand" href="/admin/detect/' . $value->id . '/edit">编辑</a> <a class="btn btn-brand-accent" id="delete" value="' . $value->id . '" href="javascript:void(0);" onClick="delete_modal_show(\'' . $value->id . '\')">删除</a>';
+            $tempdata['id'] = $value->id;
+            $tempdata['name'] = $value->name;
+            $tempdata['text'] = $value->text;
+            $tempdata['regex'] = $value->regex;
+            $tempdata['type'] = $value->type();
+
+            $data[] = $tempdata;
         }
-        $table_config['ajax_url'] = 'log/ajax';
-        return $this->view()->assign('table_config', $table_config)->display('admin/detect/log.tpl');
+
+        return $response->withJson([
+            'draw' => $request->getParam('draw'),
+            'recordsTotal' => DetectRule::count(),
+            'recordsFiltered' => $query['count'],
+            'data' => $data,
+        ]);
     }
 
-    public function create($request, $response, $args)
+    /**
+     * @param array     $args
+     */
+    public function create(Request $request, Response $response, array $args)
     {
-        return $this->view()->display('admin/detect/add.tpl');
+        return $response->write(
+            $this->view()
+                ->display('admin/detect/add.tpl')
+        );
     }
 
-    public function add($request, $response, $args)
+    /**
+     * @param array     $args
+     */
+    public function add(Request $request, Response $response, array $args)
     {
         $rule = new DetectRule();
         $rule->name = $request->getParam('name');
@@ -58,27 +92,38 @@ class DetectController extends AdminController
         $rule->regex = $request->getParam('regex');
         $rule->type = $request->getParam('type');
 
-        if (!$rule->save()) {
-            $rs['ret'] = 0;
-            $rs['msg'] = '添加失败';
-            return $response->getBody()->write(json_encode($rs));
+        if (! $rule->save()) {
+            return $response->withJson([
+                'ret' => 0,
+                'msg' => '添加失败',
+            ]);
         }
 
-        Telegram::SendMarkdown('有新的审计规则：' . $rule->name);
-
-        $rs['ret'] = 1;
-        $rs['msg'] = '添加成功';
-        return $response->getBody()->write(json_encode($rs));
+        Telegram::sendMarkdown('有新的审计规则：' . $rule->name);
+        return $response->withJson([
+            'ret' => 1,
+            'msg' => '添加成功',
+        ]);
     }
 
-    public function edit($request, $response, $args)
+    /**
+     * @param array     $args
+     */
+    public function edit(Request $request, Response $response, array $args)
     {
         $id = $args['id'];
         $rule = DetectRule::find($id);
-        return $this->view()->assign('rule', $rule)->display('admin/detect/edit.tpl');
+        return $response->write(
+            $this->view()
+                ->assign('rule', $rule)
+                ->display('admin/detect/edit.tpl')
+        );
     }
 
-    public function update($request, $response, $args)
+    /**
+     * @param array     $args
+     */
+    public function update(Request $request, Response $response, array $args)
     {
         $id = $args['id'];
         $rule = DetectRule::find($id);
@@ -88,65 +133,119 @@ class DetectController extends AdminController
         $rule->regex = $request->getParam('regex');
         $rule->type = $request->getParam('type');
 
-        if (!$rule->save()) {
-            $rs['ret'] = 0;
-            $rs['msg'] = '修改失败';
-            return $response->getBody()->write(json_encode($rs));
+        if (! $rule->save()) {
+            return $response->withJson([
+                'ret' => 0,
+                'msg' => '修改失败',
+            ]);
         }
-
-        Telegram::SendMarkdown('规则更新：' . PHP_EOL . $request->getParam('name'));
-
-        $rs['ret'] = 1;
-        $rs['msg'] = '修改成功';
-        return $response->getBody()->write(json_encode($rs));
+        Telegram::sendMarkdown('规则更新：' . PHP_EOL . $request->getParam('name'));
+        return $response->withJson([
+            'ret' => 1,
+            'msg' => '修改成功',
+        ]);
     }
 
-    public function delete($request, $response, $args)
+    /**
+     * @param array     $args
+     */
+    public function delete(Request $request, Response $response, array $args)
     {
         $id = $request->getParam('id');
         $rule = DetectRule::find($id);
-        if (!$rule->delete()) {
-            $rs['ret'] = 0;
-            $rs['msg'] = '删除失败';
-            return $response->getBody()->write(json_encode($rs));
+        if (! $rule->delete()) {
+            return $response->withJson([
+                'ret' => 0,
+                'msg' => '删除失败',
+            ]);
         }
-        $rs['ret'] = 1;
-        $rs['msg'] = '删除成功';
-        return $response->getBody()->write(json_encode($rs));
+        return $response->withJson([
+            'ret' => 1,
+            'msg' => '删除成功',
+        ]);
     }
 
-    public function ajax_rule($request, $response, $args)
+    /**
+     * @param array     $args
+     */
+    public function log(Request $request, Response $response, array $args)
     {
-        $datatables = new Datatables(new DatatablesHelper());
-        $datatables->query('Select id as op,id,name,text,regex,type from detect_list');
-
-        $datatables->edit('op', static function ($data) {
-            return '<a class="btn btn-brand" href="/admin/detect/' . $data['id'] . '/edit">编辑</a>
-                    <a class="btn btn-brand-accent" id="delete" value="' . $data['id'] . '" href="javascript:void(0);" onClick="delete_modal_show(\'' . $data['id'] . '\')">删除</a>';
-        });
-
-        $datatables->edit('type', static function ($data) {
-            return $data['type'] == 1 ? '数据包明文匹配' : '数据包十六进制匹配';
-        });
-
-        $body = $response->getBody();
-        $body->write($datatables->generate());
+        return $response->write(
+            $this->view()
+                ->assign('table_config', ResponseHelper::buildTableConfig([
+                    'id' => 'ID',
+                    'user_id' => '用户ID',
+                    'user_name' => '用户名',
+                    'node_id' => '节点ID',
+                    'node_name' => '节点名',
+                    'list_id' => '规则ID',
+                    'rule_name' => '规则名',
+                    'rule_text' => '规则描述',
+                    'rule_regex' => '规则正则表达式',
+                    'rule_type' => '规则类型',
+                    'datetime' => '时间',
+                ], 'log/ajax'))
+                ->display('admin/detect/log.tpl')
+        );
     }
 
-    public function ajax_log($request, $response, $args)
+    /**
+     * @param array     $args
+     */
+    public function ajaxLog(Request $request, Response $response, array $args)
     {
-        $datatables = new Datatables(new DatatablesHelper());
-        $datatables->query('Select detect_log.id,user_id,user.user_name,node_id,node.name as node_name,list.id as rule_id,list.name as rule_name,list.text as rule_text,list.regex as rule_regex,list.type as rule_type,detect_log.datetime from detect_log,user,ss_node as node,detect_list as list where user.id=detect_log.user_id and node.id = detect_log.node_id and list.id = detect_log.list_id');
+        $query = DetectLog::getTableDataFromAdmin(
+            $request,
+            static function (&$order_field): void {
+                if (in_array($order_field, ['node_name'])) {
+                    $order_field = 'node_id';
+                }
+                if (in_array($order_field, ['rule_name', 'rule_text', 'rule_regex', 'rule_type'])) {
+                    $order_field = 'list_id';
+                }
+                if (in_array($order_field, ['user_name'])) {
+                    $order_field = 'user_id';
+                }
+            }
+        );
 
-        $datatables->edit('rule_type', static function ($data) {
-            return $data['rule_type'] == 1 ? '数据包明文匹配' : '数据包十六进制匹配';
-        });
+        $data = [];
+        foreach ($query['datas'] as $value) {
+            /** @var DetectLog $value */
 
-        $datatables->edit('datetime', static function ($data) {
-            return date('Y-m-d H:i:s', $data['datetime']);
-        });
+            if ($value->rule() === null) {
+                DetectLog::ruleIsNull($value);
+                continue;
+            }
+            if ($value->node() === null) {
+                DetectLog::nodeIsNull($value);
+                continue;
+            }
+            if ($value->user() === null) {
+                DetectLog::userIsNull($value);
+                continue;
+            }
+            $tempdata = [];
+            $tempdata['id'] = $value->id;
+            $tempdata['user_id'] = $value->user_id;
+            $tempdata['user_name'] = $value->userName();
+            $tempdata['node_id'] = $value->node_id;
+            $tempdata['node_name'] = $value->nodeName();
+            $tempdata['list_id'] = $value->list_id;
+            $tempdata['rule_name'] = $value->ruleName();
+            $tempdata['rule_text'] = $value->ruleText();
+            $tempdata['rule_regex'] = $value->ruleRegex();
+            $tempdata['rule_type'] = $value->ruleType();
+            $tempdata['datetime'] = $value->datetime();
 
-        $body = $response->getBody();
-        $body->write($datatables->generate());
+            $data[] = $tempdata;
+        }
+
+        return $response->withJson([
+            'draw' => $request->getParam('draw'),
+            'recordsTotal' => DetectLog::count(),
+            'recordsFiltered' => $query['count'],
+            'data' => $data,
+        ]);
     }
 }

@@ -1,72 +1,73 @@
 <?php
 
-/**
- * Created by PhpStorm.
- * User: tonyzou
- * Date: 2018/9/24
- * Time: 下午7:07
- */
+declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Services\Gateway\{
-    AopF2F,
-    Codepay,
-    PaymentWall,
-    ChenPay,
-    SPay,
-    PAYJS,
-    YftPay,
-    BitPayX,
-    TomatoPay,
-    IDtPay
-};
+use App\Utils\ClassHelper;
 
-class Payment
+final class Payment
 {
-    public static function getClient()
+    public static function getAllPaymentMap(): array
     {
-        $method = $_ENV['payment_system'];
-        switch ($method) {
-            case ('codepay'):
-                return new Codepay();
-            case ('paymentwall'):
-                return new PaymentWall();
-            case ('spay'):
-                return new SPay();
-            case ('f2fpay'):
-                return new AopF2F();
-            case ('chenAlipay'):
-                return new ChenPay();
-            case ('payjs'):
-                return new PAYJS($_ENV['payjs_key']);
-            case ('yftpay'):
-                return new YftPay();
-            case ('bitpayx'):
-                return new BitPayX($_ENV['bitpay_secret']);
-            case ("tomatopay"):
-                return new TomatoPay();
-            case ("idtpay"):
-                return new IDtPay();
-            default:
-                return null;
+        $payments = [];
+
+        $helper = new ClassHelper();
+        $class_list = $helper->getClassesByNamespace('\\App\\Services\\Gateway\\');
+
+        foreach ($class_list as $clazz) {
+            if (get_parent_class($clazz) === 'App\\Services\\Gateway\\AbstractPayment') {
+                $payments[] = $clazz;
+            }
         }
+
+        return $payments;
+    }
+
+    public static function getPaymentsEnabled()
+    {
+        return array_values(array_filter(Payment::getAllPaymentMap(), static function ($payment) {
+            return $payment::_enable();
+        }));
+    }
+
+    public static function getPaymentMap()
+    {
+        $result = [];
+
+        foreach (self::getPaymentsEnabled() as $payment) {
+            $result[$payment::_name()] = $payment;
+        }
+
+        return $result;
+    }
+
+    public static function getPaymentByName($name)
+    {
+        $all = self::getPaymentMap();
+
+        return $all[$name];
     }
 
     public static function notify($request, $response, $args)
     {
-        return self::getClient()->notify($request, $response, $args);
+        $payment = self::getPaymentByName($args['type']);
+
+        if ($payment !== null) {
+            $instance = new $payment();
+            return $instance->notify($request, $response, $args);
+        }
+
+        return $response->withStatus(404);
     }
 
     public static function returnHTML($request, $response, $args)
     {
-        return self::getClient()->getReturnHTML($request, $response, $args);
-    }
+        $payment = self::getPaymentByName($args['type']);
 
-    public static function purchaseHTML()
-    {
-        if (self::getClient() != null) {
-            return self::getClient()->getPurchaseHTML();
+        if ($payment !== null) {
+            $instance = new $payment();
+            return $instance->getReturnHTML($request, $response, $args);
         }
 
         return '';
@@ -74,11 +75,25 @@ class Payment
 
     public static function getStatus($request, $response, $args)
     {
-        return self::getClient()->getStatus($request, $response, $args);
+        $payment = self::getPaymentByName($args['type']);
+
+        if ($payment !== null) {
+            $instance = new $payment();
+            return $instance->getStatus($request, $response, $args);
+        }
+
+        return $response->withStatus(404);
     }
 
     public static function purchase($request, $response, $args)
     {
-        return self::getClient()->purchase($request, $response, $args);
+        $payment = self::getPaymentByName($args['type']);
+
+        if ($payment !== null) {
+            $instance = new $payment();
+            return $instance->purchase($request, $response, $args);
+        }
+
+        return $response->withStatus(404);
     }
 }

@@ -1,21 +1,24 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Command;
 
 use App\Models\User;
-use App\Utils\Telegram;
 use App\Utils\DatatablesHelper;
+use App\Utils\Telegram;
 use Ozdemir\Datatables\Datatables;
 
-class FinanceMail extends Command
+final class FinanceMail extends Command
 {
-    public $description = ''
-        . '├─=: php xcat FinanceMail [选项]' . PHP_EOL
-        . '│ ├─ day                     - 日报' . PHP_EOL
-        . '│ ├─ week                    - 周报' . PHP_EOL
-        . '│ ├─ month                   - 月报' . PHP_EOL;
+    public $description = <<<EOL
+├─=: php xcat FinanceMail [选项]
+│ ├─ day                     - 日报
+│ ├─ week                    - 周报
+│ ├─ month                   - 月报
+EOL;
 
-    public function boot()
+    public function boot(): void
     {
         if (count($this->argv) === 2) {
             echo $this->description;
@@ -29,7 +32,7 @@ class FinanceMail extends Command
         }
     }
 
-    public function day()
+    public function day(): void
     {
         $datatables = new Datatables(new DatatablesHelper());
         $datatables->query(
@@ -53,30 +56,7 @@ class FinanceMail extends Command
             ++$income_count;
             $income_total += $code['number'];
         }
-        //易付通的单独表
-        $datatables2 = new Datatables(new DatatablesHelper());
-        $datatables2->query('select COUNT(*) as "count_yft" from INFORMATION_SCHEMA.TABLES where TABLE_NAME = "yft_order_info"');
-        $count_yft = $datatables2->generate();
-        if (strpos($count_yft, '"count_yft":1')) {
-            $datatables2->query(
-                'select yft_order_info.price, yft_order_info.user_id, yft_order_info.create_time from yft_order_info
-				where TO_DAYS(NOW()) - TO_DAYS(yft_order_info.create_time) = 1 and yft_order_info.state= 1'
-            );
-            $text_json2 = $datatables2->generate();
-            $text_array2 = json_decode($text_json2, true);
-            $codes2 = $text_array2['data'];
-            foreach ($codes2 as $code2) {
-                $text_html .= '<tr>';
-                $text_html .= '<td>' . $code2['price'] . '</td>';
-                $text_html .= '<td>' . $code2['user_id'] . '</td>';
-                $user = User::find($code2['user_id']);
-                $text_html .= '<td>' . $user->user_name . '</td>';
-                $text_html .= '<td>' . $code2['create_time'] . '</td>';
-                $text_html .= '</tr>';
-                ++$income_count;
-                $income_total += $code['price'];
-            }
-        }
+
         $text_html .= '</table>';
         $text_html .= '<br>昨日总收入笔数：' . $income_count . '<br>昨日总收入金额：' . $income_total;
 
@@ -88,14 +68,14 @@ class FinanceMail extends Command
                 'news/finance.tpl',
                 [
                     'title' => '财务日报',
-                    'text'  => $text_html
+                    'text' => $text_html,
                 ],
                 []
             );
         }
 
         if ($_ENV['finance_public']) {
-            Telegram::Send(
+            Telegram::send(
                 '新鲜出炉的财务日报~' . PHP_EOL .
                 '昨日总收入笔数:' . $income_count . PHP_EOL .
                 '昨日总收入金额:' . $income_total . PHP_EOL .
@@ -104,7 +84,7 @@ class FinanceMail extends Command
         }
     }
 
-    public function week()
+    public function week(): void
     {
         $datatables = new Datatables(new DatatablesHelper());
         $datatables->query(
@@ -122,24 +102,6 @@ class FinanceMail extends Command
             ++$income_count;
             $income_total += $code['number'];
         }
-        //易付通的单独表
-        $datatables2 = new Datatables(new DatatablesHelper());
-        $datatables2->query('select COUNT(*) as "count_yft" from INFORMATION_SCHEMA.TABLES where TABLE_NAME = "yft_order_info"');
-        $count_yft = $datatables2->generate();
-        if (strpos($count_yft, '"count_yft":1')) {
-            $datatables2->query(
-                'select yft_order_info.price from yft_order_info
-				where yearweek(date_format(yft_order_info.create_time,\'%Y-%m-%d\')) = yearweek(now())-1 and yft_order_info.state= 1'
-            );
-            //每周的第一天是周日，因此统计周日～周六的七天
-            $text_json2 = $datatables2->generate();
-            $text_array2 = json_decode($text_json2, true);
-            $codes2 = $text_array2['data'];
-            foreach ($codes2 as $code2) {
-                ++$income_count;
-                $income_total += $code2['price'];
-            }
-        }
 
         $text_html .= '<br>上周总收入笔数：' . $income_count . '<br>上周总收入金额：' . $income_total;
 
@@ -151,14 +113,14 @@ class FinanceMail extends Command
                 'news/finance.tpl',
                 [
                     'title' => '财务周报',
-                    'text'  => $text_html
+                    'text' => $text_html,
                 ],
                 []
             );
         }
 
         if ($_ENV['finance_public']) {
-            Telegram::Send(
+            Telegram::send(
                 '新鲜出炉的财务周报~' . PHP_EOL .
                 '上周总收入笔数:' . $income_count . PHP_EOL .
                 '上周总收入金额:' . $income_total . PHP_EOL .
@@ -167,7 +129,7 @@ class FinanceMail extends Command
         }
     }
 
-    public function month()
+    public function month(): void
     {
         $datatables = new Datatables(new DatatablesHelper());
         $datatables->query(
@@ -194,14 +156,14 @@ class FinanceMail extends Command
                 'news/finance.tpl',
                 [
                     'title' => '财务月报',
-                    'text'  => $text_html
+                    'text' => $text_html,
                 ],
                 []
             );
         }
 
         if ($_ENV['finance_public']) {
-            Telegram::Send(
+            Telegram::send(
                 '新鲜出炉的财务月报~' . PHP_EOL .
                 '上月总收入笔数:' . $income_count . PHP_EOL .
                 '上月总收入金额:' . $income_total . PHP_EOL .
