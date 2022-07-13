@@ -320,6 +320,7 @@ return function (SlimApp $app): void {
     $app->group('/sub', function (): void {
         $this->get('/{token}/{subtype}', App\Controllers\SubController::class . ':getContent');
     });
+    
     // chenApp
     $app->group("/appApi", function () {
         $this->post("/token", \App\Controllers\AppApiController::class . ":newToken");

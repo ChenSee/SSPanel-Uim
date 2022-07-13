@@ -11,6 +11,8 @@ use App\Utils\Hash;
 use App\Utils\Tools;
 use App\Services\Auth;
 use App\Utils\URL;
+use Slim\Http\Request;
+use Slim\Http\Response;
 
 /**
  *  AppApiController
@@ -20,7 +22,6 @@ class AppApiController extends BaseController
 
     public static function genQrStr($server, $port, $pwd, $method)
     {
-
         // method:password@hostname:port
         $txt = sprintf('%s:%s@%s:%u', $method, $pwd, $server, $port);
         // ss://base64(str)
@@ -44,7 +45,7 @@ class AppApiController extends BaseController
         return $tokenModel ?: null;
     }
 
-    public function newToken($request, $response, $args)
+    public function newToken(Request $request, Response $response, array $args)
     {
         // $data = $request->post('sdf');
         $email = $request->getParam('email');
@@ -58,13 +59,13 @@ class AppApiController extends BaseController
         if ($user == null) {
             $res['ret'] = 0;
             $res['msg'] = "401 邮箱或者密码错误";
-            return $this->echoJson($response, $res);
+            return $response->withJson($res);
         }
 
         if (!Hash::checkPassword($user->pass, $passwd)) {
             $res['ret'] = 0;
             $res['msg'] = "402 邮箱或者密码错误";
-            return $this->echoJson($response, $res);
+            return $response->withJson($res);
         }
         $tokenStr = Tools::genToken();
         $expireTime = time() + 3600 * 24 * 7;
@@ -73,21 +74,22 @@ class AppApiController extends BaseController
             $res['msg'] = "ok";
             $res['data']['token'] = $tokenStr;
             $res['data']['user_id'] = $user->id;
-            return $this->echoJson($response, $res);
+            return $response->withJson($res);
         }
         $res['ret'] = 0;
         $res['msg'] = "system error";
-        return $this->echoJson($response, $res);
+        return $response->withJson($res);
     }
 
-    public function index($request, $response, $args)
+    public function index(Request $request, Response $response, array $args)
     {
         $accessToken = $request->getParam('access_token');
         $token = $this->getToken($accessToken);
         if (!$token) return $response->withStatus(401)->withJson(['ret' => 0]);
         $user = User::find($token->user_id);
         $Ann = Ann::orderBy('date', 'desc')->first();
-        return $this->echoJson($response, [
+        return $response->withJson(
+            [
                 'code' => 1,
                 'user' => $user,
                 'ann' => $Ann,
@@ -96,22 +98,24 @@ class AppApiController extends BaseController
                     "total" => $user->enableTraffic(),
                     "used" => $user->usedTraffic(),
                     "unused" => $user->unusedTraffic(),
-//                    "unusedBet" => $user->unusedTrafficBet(),
+                    //                    "unusedBet" => $user->unusedTrafficBet(),
                 ],
-                'data' => static::nodes($user)]
+                'data' => static::nodes($user)
+            ]
         );
     }
 
-    public function v2_index($request, $response, $args)
+    public function v2_index(Request $request, Response $response, array $args)
     {
         $accessToken = $request->getParam('access_token');
         $token = $this->getToken($accessToken);
         if (!$token) return $response->withStatus(401)->withJson(['ret' => 0]);
         $user = User::find($token->user_id);
         // 等级过期时间
-//        $user->expire_time = $user->class_expire;
+        //        $user->expire_time = $user->class_expire;
         $Ann = Ann::orderBy('date', 'desc')->first();
-        return $this->echoJson($response, [
+        return $response->withJson(
+            [
                 'code' => 1,
                 'user' => $user,
                 'ann' => $Ann,
@@ -120,9 +124,10 @@ class AppApiController extends BaseController
                     "total" => $user->enableTraffic(),
                     "used" => $user->usedTraffic(),
                     "unused" => $user->unusedTraffic(),
-//                    "unusedBet" => $user->unusedTrafficBet(),
+                    //                    "unusedBet" => $user->unusedTrafficBet(),
                 ],
-                'data' => static::v2_nodes($user)]
+                'data' => static::v2_nodes($user)
+            ]
         );
     }
 
@@ -160,16 +165,17 @@ class AppApiController extends BaseController
         return $tempArray;
     }
 
-    public function ssr_index($request, $response, $args)
+    public function ssr_index(Request $request, Response $response, array $args)
     {
         $accessToken = $request->getParam('access_token');
         $token = $this->getToken($accessToken);
         if (!$token) return $response->withStatus(401)->withJson(['ret' => 0]);
         $user = User::find($token->user_id);
         // 等级过期时间
-//        $user->expire_time = $user->class_expire;
+        //        $user->expire_time = $user->class_expire;
         $Ann = Ann::orderBy('date', 'desc')->first();
-        return $this->echoJson($response, [
+        return $response->withJson(
+            [
                 'code' => 1,
                 'user' => $user,
                 'ann' => $Ann,
@@ -178,9 +184,10 @@ class AppApiController extends BaseController
                     "total" => $user->enableTraffic(),
                     "used" => $user->usedTraffic(),
                     "unused" => $user->unusedTraffic(),
-//                    "unusedBet" => $user->unusedTrafficBet(),
+                    //                    "unusedBet" => $user->unusedTrafficBet(),
                 ],
-                'data' => static::ssr_nodes($user)]
+                'data' => static::ssr_nodes($user)
+            ]
         );
     }
 
@@ -191,14 +198,16 @@ class AppApiController extends BaseController
         })->orderBy('sort')->get();
         $data = [];
         foreach ($nodes as $n) {
-            if ($n->sort == 0 || $n->sort == 7 || $n->sort == 8 ||
-                $n->sort == 10 || $n->sort == 11) {
+            if (
+                $n->sort == 0 || $n->sort == 7 || $n->sort == 8 ||
+                $n->sort == 10 || $n->sort == 11
+            ) {
                 $n->online_user = $n->getOnlineUserCount();
             } else {
                 $n->online_user = -1;
             }
             $n->ssQr = static::genQrStr($n->server, $user->port, $user->passwd, $user->method);
-//            if ($n->node_bandwidth_limit >= $n->node_bandwidth)
+            //            if ($n->node_bandwidth_limit >= $n->node_bandwidth)
             if ($n->isNodeOnline() !== false) array_push($data, $n);
         }
         return $data;
@@ -225,24 +234,26 @@ class AppApiController extends BaseController
     {
         $nodes = Node::whereIn('sort', [0, 10])->where("type", "1")->where(
             function ($query) use ($user) {
-                $query->where("node_group", "=", $user->node_group)
-                    ->orWhere("node_group", "=", 0);
+                $query->where("node_group", $user->node_group)
+                    ->orWhere("node_group", 0);
             }
         )->orderBy('name')->get();
 
         $mu_nodes = Node::where('sort', 9)->where("type", "1")->where(
             function ($query) use ($user) {
-                $query->where("node_group", "=", $user->node_group)
-                    ->orWhere("node_group", "=", 0);
+                $query->where("node_group", $user->node_group)
+                    ->orWhere("node_group", 0);
             }
         )->orderBy('name')->get();
 
-        $temparray = array();
+        $tempArray = array();
         foreach ($nodes as $node) {
-            if ($node->isNodeOnline() !== false) {
+            if ($node->isNodeOnline()) {
                 $node->name = preg_replace('/-/', ' - ', $node->name);
                 if ($node->mu_only == -1 || $node->mu_only == 0) {
-                    array_push($temparray, array(
+                    array_push(
+                        $tempArray,
+                        [
                             "name" => $node->name,
                             "info" => $node->info,
                             "status" => $node->status,
@@ -260,16 +271,17 @@ class AppApiController extends BaseController
                             "password" => $user->passwd,
                             "group" => Config::get('appName'),
                             "protocol" => str_replace("_compatible", "", (($node->custom_rss == 1 && !($user->obfs == 'plain' && $user->protocol == 'origin')) ? $user->protocol : "origin")),
-                        )
+                        ]
                     );
                 }
 
                 if ($node->mu_only == 1) {
                     foreach ($mu_nodes as $mu_node) {
-                        $mu_user = User::where('port', '=', $mu_node->server)->first();
+                        $mu_user = User::where('port', $mu_node->server)->first();
                         $mu_user->obfs_param = $user->getMuMd5();
                         $port = static::deviation($node, $mu_node->server);
-                        array_push($temparray, array("name" => explode('#', $node->name)[0],
+                        array_push($tempArray, [
+                            "name" => explode('#', $node->name)[0],
                             "info" => explode('#', $node->info)[0] . " - " . $port . " 端口",
                             "status" => $node->status,
                             "server" => explode(';', $node->server)[0],
@@ -289,35 +301,36 @@ class AppApiController extends BaseController
                             "udp_over_tcp" => false,
                             "protocol" => str_replace("_compatible", "", $mu_user->protocol),
                             "obfs_udp" => false,
-                            "enable" => true));
+                            "enable" => true
+                        ]);
                     }
                 }
             }
         }
-        return $temparray;
+        return $tempArray;
     }
 
 
-    public function doCheckIn($request, $response, $args)
+    public function doCheckIn(Request $request, Response $response, array $args)
     {
         $accessToken = $request->getParam('access_token');
         $token = $this->getToken($accessToken);
         if (!$token) {
             $res['ret'] = 0;
             $res['msg'] = "token is null";
-            return $this->echoJson($response, $res);
+            return $response->withJson($res);
         }
         $user = User::find($token->user_id);
         if (strtotime($user->expire_in) < time()) {
             $res['ret'] = 0;
             $res['msg'] = "您的账户已过期，无法签到。";
-            return $this->echoJson($response, $res);
+            return $response->withJson($res);
         }
 
         if (!$user->isAbleToCheckin()) {
             $res['ret'] = 0;
             $res['msg'] = "您似乎已经签到过了...";
-            return $this->echoJson($response, $res);
+            return $response->withJson($res);
         }
         $traffic = rand(Config::get('checkinMin'), Config::get('checkinMax'));
         $user->transfer_enable = $user->transfer_enable + Tools::toMB($traffic);
@@ -327,17 +340,17 @@ class AppApiController extends BaseController
         $res['unflowtraffic'] = $user->transfer_enable;
         $res['traffic'] = Tools::flowAutoShow($user->transfer_enable);
         $res['ret'] = 1;
-        return $this->echoJson($response, $res);
+        return $response->withJson($res);
     }
 
-    public function redirect($request, $response, $args)
+    public function redirect(Request $request, Response $response, array $args)
     {
         $accessToken = $request->getParam('access_token');
         $token = $this->getToken($accessToken);
         if (!$token) {
             $res['ret'] = 0;
             $res['msg'] = "token is null";
-            return $this->echoJson($response, $res);
+            return $response->withJson($res);
         }
         $url = $request->getQueryParams()["target"];
         $user = User::find($token->user_id);
@@ -345,5 +358,4 @@ class AppApiController extends BaseController
         Auth::login($user->id, $time);
         return $response->withRedirect($url);
     }
-
 }
