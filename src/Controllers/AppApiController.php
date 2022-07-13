@@ -126,7 +126,7 @@ class AppApiController extends BaseController
                     "unused" => $user->unusedTraffic(),
                     //                    "unusedBet" => $user->unusedTrafficBet(),
                 ],
-                'data' => static::v2_nodes($user)
+                'data' => array_merge(static::v2_nodes($user), static::ssr_nodes($user))
             ]
         );
     }
